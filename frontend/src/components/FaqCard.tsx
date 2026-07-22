@@ -16,9 +16,6 @@ export function FaqCard({ item, isOpen, onToggle }: FaqCardProps) {
         aria-expanded={isOpen}
       >
         <span className={styles.questionArea}>
-          {item.category && (
-            <span className={styles.category}>{item.category}</span>
-          )}
           <span className={styles.question}>{item.question}</span>
         </span>
         <span className={styles.chevron} aria-hidden="true">

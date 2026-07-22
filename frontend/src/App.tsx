@@ -85,7 +85,11 @@ export function App() {
 
         <section>
           <h2 className={styles.sectionTitle}>Perguntas frequentes</h2>
-          <FaqAccordion items={filteredFaq} loading={loadingFaq} />
+          <FaqAccordion
+            items={filteredFaq}
+            loading={loadingFaq}
+            autoExpand={query.trim().length > 0}
+          />
         </section>
       </main>
 
