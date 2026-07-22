@@ -22,9 +22,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guia_dp}
       POSTGRES_DB: ${POSTGRES_DB:-guia_dp}
     # Porta ligada SÓ ao localhost da VPS — acessível apenas via túnel SSH,
-    # nunca exposta à internet. Para conectar o pgAdmin, veja o README/docs.
+    # nunca exposta à internet. Usamos 5433 no host (a 5432 já está em uso
+    # na VPS); dentro do container o Postgres continua na 5432.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - guia_dp_pgdata:/var/lib/postgresql/data
     healthcheck:
