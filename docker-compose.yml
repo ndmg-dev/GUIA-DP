@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: guia-dp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: guia_dp
+      POSTGRES_PASSWORD: guia_dp
+      POSTGRES_DB: guia_dp
+    ports:
+      - "5432:5432"
+    volumes:
+      - guia_dp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guia_dp -d guia_dp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  guia_dp_pgdata:

@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────
+# Guia de DP — deploy no Coolify como UM único recurso "Docker Compose".
+# Três containers: db (Postgres) + backend (Express) + frontend (nginx).
+#
+# Domínio único, roteamento por path via as variáveis mágicas do Coolify:
+#   frontend → https://SEU_DOMINIO/
+#   backend  → https://SEU_DOMINIO/api
+#
+# No Coolify, defina estas variáveis de ambiente do recurso:
+#   SERVICE_FQDN_FRONTEND=https://guia-dp.seudominio.com
+#   SERVICE_FQDN_BACKEND=https://guia-dp.seudominio.com/api
+#   OPENAI_API_KEY=<nova chave rotacionada>
+#   POSTGRES_PASSWORD=<senha forte>   (ou deixe o Coolify gerar)
+# ─────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-guia_dp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guia_dp}
+      POSTGRES_DB: ${POSTGRES_DB:-guia_dp}
+    # Porta ligada SÓ ao localhost da VPS — acessível apenas via túnel SSH,
+    # nunca exposta à internet. Para conectar o pgAdmin, veja o README/docs.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - guia_dp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-guia_dp} -d ${POSTGRES_DB:-guia_dp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # FQDN + path gerenciados pelo Coolify (gera as labels do Traefik).
+      SERVICE_FQDN_BACKEND: ${SERVICE_FQDN_BACKEND}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-guia_dp}:${POSTGRES_PASSWORD:-guia_dp}@db:5432/${POSTGRES_DB:-guia_dp}
+      LLM_PROVIDER: openai
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      PORT: 3333
+      # Mesmo domínio do frontend → sem problema de CORS.
+      CORS_ORIGIN: ${SERVICE_FQDN_FRONTEND}
+    expose:
+      - "3333"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3333/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Vazio → o app faz chamadas relativas (/api/...) no mesmo host.
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      SERVICE_FQDN_FRONTEND: ${SERVICE_FQDN_FRONTEND}
+    expose:
+      - "80"
+
+volumes:
+  guia_dp_pgdata:

@@ -1,0 +1,39 @@
+// Guia de DP — schema Prisma
+// Mapeia as tabelas descritas na seção 4 da especificação.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Perguntas frequentes cadastradas manualmente (FAQ fixo)
+model FaqItem {
+  id         Int      @id @default(autoincrement())
+  question   String
+  answer     String
+  category   String?  @db.VarChar(100)
+  orderIndex Int      @default(0) @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("faq_items")
+}
+
+/// Cache de perguntas feitas à IA (e reaproveitadas)
+model ConversationCache {
+  id                 Int      @id @default(autoincrement())
+  questionRaw        String   @map("question_raw")
+  questionNormalized String   @map("question_normalized")
+  answer             String
+  llmProvider        String?  @map("llm_provider") @db.VarChar(50)
+  hitCount           Int      @default(1) @map("hit_count")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt         DateTime @default(now()) @map("last_used_at") @db.Timestamptz(6)
+
+  @@index([questionNormalized], name: "idx_conversation_question_normalized")
+  @@map("conversation_cache")
+}
