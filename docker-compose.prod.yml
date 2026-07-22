@@ -21,11 +21,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-guia_dp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guia_dp}
       POSTGRES_DB: ${POSTGRES_DB:-guia_dp}
-    # Porta ligada SÓ ao localhost da VPS — acessível apenas via túnel SSH,
-    # nunca exposta à internet. Usamos 5433 no host (a 5432 já está em uso
-    # na VPS); dentro do container o Postgres continua na 5432.
-    ports:
-      - "127.0.0.1:5433:5432"
+    # Sem publicar porta no host: o Coolify ignora o bind 127.0.0.1 e tenta
+    # 0.0.0.0, causando conflito. O banco fica só na rede interna do Docker
+    # (backend acessa via "db:5432"). Para o pgAdmin, use túnel SSH até o IP
+    # do container (ver docs de deploy).
     volumes:
       - guia_dp_pgdata:/var/lib/postgresql/data
     healthcheck:
