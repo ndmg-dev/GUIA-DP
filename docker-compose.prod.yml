@@ -42,15 +42,16 @@ services:
       db:
         condition: service_healthy
     environment:
-      # FQDN + path gerenciados pelo Coolify (gera as labels do Traefik).
-      SERVICE_FQDN_BACKEND: ${SERVICE_FQDN_BACKEND}
+      # Sem SERVICE_FQDN aqui: o backend NÃO tem domínio próprio. Ele é
+      # acessado internamente pelo nginx do frontend (proxy /api → backend).
       DATABASE_URL: postgresql://${POSTGRES_USER:-guia_dp}:${POSTGRES_PASSWORD:-guia_dp}@db:5432/${POSTGRES_DB:-guia_dp}
       LLM_PROVIDER: openai
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       PORT: 3333
-      # Mesmo domínio do frontend → sem problema de CORS.
-      CORS_ORIGIN: ${SERVICE_FQDN_FRONTEND}
+      # Requisições chegam pelo mesmo domínio (via nginx) → mesma origem,
+      # CORS não chega a ser acionado. Mantido por segurança.
+      CORS_ORIGIN: ${SERVICE_URL_FRONTEND}
     expose:
       - "3333"
     healthcheck:
