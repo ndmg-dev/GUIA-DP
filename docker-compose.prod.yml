@@ -49,9 +49,12 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       PORT: 3333
-      # Requisições chegam pelo mesmo domínio (via nginx) → mesma origem,
-      # CORS não chega a ser acionado. Mantido por segurança.
-      CORS_ORIGIN: ${SERVICE_URL_FRONTEND}
+      # Requisições do próprio nginx/frontend chegam pelo mesmo domínio →
+      # mesma origem, CORS nem chega a ser acionado ali. A entrada do CRM é
+      # que precisa mesmo do CORS: o frontend deste sistema foi embutido
+      # nativamente em crmmg.mendoncagalvao.com.br e chama esta API
+      # cross-origin direto do navegador (sem dado sensível de cliente aqui).
+      CORS_ORIGIN: ${SERVICE_URL_FRONTEND},https://crmmg.mendoncagalvao.com.br
     expose:
       - "3333"
     healthcheck:
